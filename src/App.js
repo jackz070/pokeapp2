@@ -45,7 +45,7 @@ const App = () => {
         <Route
           exact
           path="/"
-          element={<PokemonList {...typecolorchart} />}
+          element={<PokemonList typecolorchart={typecolorchart} />}
         ></Route>
         <Route path="/about" element={<About />}></Route>
         <Route path="/types" element={<Types />}></Route>

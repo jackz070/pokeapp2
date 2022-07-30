@@ -10,17 +10,24 @@ import {
   Divider,
   Box,
   TextField,
+  InputLabel,
+  MenuItem,
+  FormControl,
 } from "@mui/material";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
 
 import Loader from "./Loader";
+import typeChart from "../utils/typeChart";
+import SinglePokemon from "./SinglePokemon";
 
 import { Link as RouterLink } from "react-router-dom";
 
-const PokemonList = (typecolorchart) => {
+const PokemonList = () => {
   const [allPokemonList, setAllPokemonList] = useState([]);
   const [pokemonList, setPokemonList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [typeSort, setTypeSort] = useState("");
 
   //Happens only at first render
 
@@ -54,13 +61,45 @@ const PokemonList = (typecolorchart) => {
 
   useEffect(() => {
     setPokemonList(allPokemonList);
-    if (searchTerm) {
+    if (searchTerm && !typeSort) {
       const filteredPokemon = allPokemonList?.filter((pokemon) =>
         pokemon.name.includes(searchTerm)
       );
       setPokemonList(filteredPokemon);
     }
-  }, [allPokemonList, searchTerm]);
+
+    //Sort By Type logic
+    if (typeSort === "all") {
+      setTypeSort("");
+    }
+
+    if (typeSort && !searchTerm) {
+      const filteredPokemon = allPokemonList?.filter((pokemon) =>
+        checkTypes(pokemon.types)
+      );
+      setPokemonList(filteredPokemon);
+    }
+
+    // Both Sort By Type && By Search Term functionality
+    if (typeSort && searchTerm) {
+      const filteredPokemon = allPokemonList
+        ?.filter((pokemon) => pokemon.name.includes(searchTerm))
+        .filter((pokemon) => checkTypes(pokemon.types));
+      setPokemonList(filteredPokemon);
+    }
+  }, [typeSort, searchTerm, allPokemonList]);
+
+  //Helpers for Sort By Type functionality
+
+  const checkTypes = (types) => {
+    for (let type of types) {
+      return type.type.name === typeSort;
+    }
+  };
+
+  const handleChange = (event) => {
+    setTypeSort(event.target.value);
+  };
 
   return (
     <Container
@@ -79,6 +118,26 @@ const PokemonList = (typecolorchart) => {
           marginTop: "15px",
         }}
       >
+        <Box sx={{ minWidth: 120 }}>
+          <FormControl
+            variant="standard"
+            sx={{ marginRight: 10, minWidth: 120 }}
+          >
+            <InputLabel id="demo-simple-select-label">Sort By Type</InputLabel>
+            <Select
+              labelId="demo-simple-select-label"
+              id="demo-simple-select"
+              value={typeSort}
+              label="Type"
+              onChange={handleChange}
+            >
+              <MenuItem value="all">all</MenuItem>
+              {Object.keys(typeChart).map((key) => (
+                <MenuItem value={key}>{key}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
         <TextField
           id="standard-basic"
           label="Search by Name"
@@ -95,64 +154,7 @@ const PokemonList = (typecolorchart) => {
       ) : (
         <Grid container rowSpacing={6} columnSpacing={4}>
           {pokemonList?.map((pokemon) => (
-            <Grid
-              item
-              xs={6}
-              sm={2}
-              key={pokemon.name}
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <img
-                src={pokemon.sprites.front_default}
-                style={{ transform: "scale(1.1)" }}
-              />
-              <Typography
-                variant="overline"
-                sx={{
-                  color: "darkgray",
-                  lineHeight: "4px",
-                  marginBottom: "8px",
-                }}
-              >
-                #{pokemon.id}
-              </Typography>
-              <Link
-                component={RouterLink}
-                to={`/${pokemon.id}`}
-                underline="hover"
-                variant="body1"
-                sx={{ lineHeight: "1.2rem" }}
-              >
-                {pokemon.name[0].toUpperCase() + pokemon.name.substring(1)}
-              </Link>
-              <Stack
-                direction="row"
-                spacing={1}
-                divider={<Divider orientation="vertical" flexItem />}
-              >
-                {pokemon?.types.map((type) => {
-                  let name =
-                    type.type.name[0].toUpperCase() +
-                    type.type.name.substring(1);
-                  return (
-                    <Typography
-                      variant="caption"
-                      key={type.type.name}
-                      sx={{
-                        color: typecolorchart[name],
-                      }}
-                    >
-                      {type.type.name}
-                    </Typography>
-                  );
-                })}
-              </Stack>
-            </Grid>
+            <SinglePokemon pokemon={pokemon} />
           ))}
         </Grid>
       )}
